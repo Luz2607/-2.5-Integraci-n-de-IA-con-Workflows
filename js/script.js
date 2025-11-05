@@ -106,32 +106,78 @@ function computeExpression(userExpr) {
   }
 }
 
-/* =============== IP pública =============== */
+/* =============== IP pública (mejorado, sin tocar lo demás) =============== */
 async function getPublicIP() {
-  const endpoints = [
-    "https://api.ipify.org?format=json",
-    "https://api64.ipify.org?format=json",
-    "https://api.myip.com",
-    "https://ipapi.co/json/"
+  // Ejecuta varias fuentes en paralelo y regresa la primera que funcione.
+  // Soporta JSON y texto plano; maneja CORS y timeouts cortos.
+  const sources = [
+    { url: "https://api.ipify.org?format=json", type: "json", path: ["ip"] },
+    { url: "https://api64.ipify.org?format=json", type: "json", path: ["ip"] },
+    { url: "https://api.myip.com", type: "json", path: ["ip"] },
+    { url: "https://ipapi.co/json/", type: "json", path: ["ip"] },
+    { url: "https://geolocation-db.com/json/", type: "json", path: ["IPv4","ipv4","ip"] },
+    // Texto plano (muchos permiten CORS): parseamos la primera línea como IP
+    { url: "https://ipv4.icanhazip.com", type: "text" },
+    { url: "https://checkip.amazonaws.com", type: "text" },
+    // Cloudflare trace (texto con key=value)
+    { url: "https://www.cloudflare.com/cdn-cgi/trace", type: "trace" }
   ];
-  for (const url of endpoints) {
-    try {
-      const r = await fetch(url, { cache: "no-store" });
-      if (!r.ok) continue;
-      const ct = (r.headers.get("content-type") || "").toLowerCase();
-      if (!ct.includes("application/json")) continue;
+
+  const withTimeout = (p, ms = 2500) =>
+    Promise.race([
+      p,
+      new Promise((_, rej) => setTimeout(() => rej(new Error("timeout")), ms))
+    ]);
+
+  const tryOne = async (src) => {
+    const r = await withTimeout(fetch(src.url, { cache: "no-store" }));
+    if (!r.ok) throw new Error("http");
+    const ct = (r.headers.get("content-type") || "").toLowerCase();
+
+    if (src.type === "json") {
+      if (!ct.includes("application/json")) throw new Error("not-json");
       const j = await r.json();
-      const ip = j.ip || j.query || j.address || j.addr || null;
-      if (typeof ip === "string" && ip.trim()) return ip.trim();
-    } catch {}
-  }
-  try {
-    const r = await fetch("https://www.cloudflare.com/cdn-cgi/trace", { cache: "no-store" });
-    if (r.ok) {
+      // Busca en las rutas posibles
+      for (const key of src.path) {
+        if (j && typeof j[key] === "string" && j[key].trim()) {
+          return normalizeIP(j[key].trim());
+        }
+      }
+      // fall back por si el servicio devuelve otra llave estándar
+      const guess = j.ip || j.query || j.address || j.addr;
+      if (typeof guess === "string" && guess.trim()) return normalizeIP(guess.trim());
+      throw new Error("no-ip");
+    }
+
+    if (src.type === "text") {
+      if (!ct.includes("text/plain")) {
+        // algunos devuelven text/html pero el body sigue siendo la IP
+      }
+      const t = (await r.text()).trim();
+      if (t) return normalizeIP(t.split(/\s+/)[0]);
+      throw new Error("no-ip");
+    }
+
+    if (src.type === "trace") {
       const t = await r.text();
       const m = t.match(/^ip=([^\n\r]+)/m);
-      if (m && m[1]) return m[1].trim();
+      if (m && m[1]) return normalizeIP(m[1].trim());
+      throw new Error("no-ip");
     }
-  } catch {}
-  return null;
+
+    throw new Error("unknown-type");
+  };
+
+  try {
+    // Promise.any devuelve el primero que resuelva
+    const ip = await Promise.any(sources.map(tryOne));
+    return ip || null;
+  } catch {
+    return null;
+  }
+}
+
+function normalizeIP(ip) {
+  // Limpia caracteres raros y soporta IPv4/IPv6; quita corchetes si aparecieran
+  return ip.replace(/^\[|\]$/g, "").trim();
 }
