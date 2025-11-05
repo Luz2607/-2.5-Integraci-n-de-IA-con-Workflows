@@ -2,18 +2,84 @@
 <html lang="es">
 <head>
   <meta charset="utf-8" />
-  <title>Calculadora n8n</title>
+  <title>Calculadora n8n • Operaciones</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <!-- Bootstrap 5 -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <!-- Estilos oscuros minimalistas -->
   <link rel="stylesheet" href="assets/styles.css">
 </head>
-<body>
-  <main class="box">
-    <form id="form">
-      <input id="op" class="input" placeholder="Escribe la operación (ej. 12+8, 20-3, 5*6, 50/5)" autocomplete="off" />
-      <button id="btn" class="btn" type="submit">Calcular</button>
-    </form>
-    <div id="result" class="result">—</div>
+<body class="bg-dark-ux text-ux">
+
+  <!-- Header simple con glow -->
+  <header class="container py-4">
+    <div class="text-center">
+      <h1 class="fw-bold mb-1 title-glow">Calculadora n8n</h1>
+      <p class="text-muted-ux mb-0">Escribe la operación y presiona <b>Calcular</b>.</p>
+    </div>
+  </header>
+
+  <!-- Main (IDs intactos) -->
+  <main class="container mb-4">
+    <div class="row justify-content-center">
+      <div class="col-12 col-lg-8">
+        <div class="panel p-3 p-md-4 rounded-4 shadow-soft">
+          <form id="form" class="d-flex gap-2 flex-column flex-md-row">
+            <input
+              id="op"
+              class="form-control form-control-lg input-ux"
+              type="text"
+              placeholder="Ej. 12+8, 50/5, 4*(6-2)"
+              autocomplete="off"
+            />
+            <button id="btn" class="btn btn-primary btn-lg px-4 btn-ux" type="submit">
+              Calcular
+            </button>
+          </form>
+
+          <!-- Resultado -->
+          <div id="result" class="result-ux text-center fs-4 mt-3">—</div>
+
+          <!-- Línea breve de ayuda -->
+          <p class="text-muted-ux small mb-0 mt-2">Soporta +, −, ×, ÷ y paréntesis.</p>
+        </div>
+      </div>
+    </div>
   </main>
+
+  <!-- Funciones usadas (compacto) -->
+  <section class="container mb-5">
+    <div class="row justify-content-center">
+      <div class="col-12 col-lg-8">
+        <div class="panel p-3 p-md-4 rounded-4">
+          <h3 class="h6 fw-semibold mb-3">Funciones usadas</h3>
+          <div class="d-flex flex-wrap gap-2">
+            <span class="badge rounded-pill badge-ux badge-blue">Suma (+)</span>
+            <span class="badge rounded-pill badge-ux badge-red">Resta (−)</span>
+            <span class="badge rounded-pill badge-ux badge-green">Multiplicación (×)</span>
+            <span class="badge rounded-pill badge-ux badge-yellow">División (÷)</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer simple -->
+  <footer class="footer-ux py-4">
+    <div class="container text-center small text-muted-ux">
+      <div>Desarrollado por Luz María Cruz García • © 21200647 <span id="year"></span></div>
+    </div>
+  </footer>
+
+  <!-- Bootstrap JS (opcional) -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+  <!-- Tu JS existente (NO tocar) -->
   <script src="js/script.js"></script>
+  <script>
+    document.getElementById('year').textContent = new Date().getFullYear();
+  </script>
 </body>
 </html>
